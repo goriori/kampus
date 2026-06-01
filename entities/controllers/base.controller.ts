@@ -1,4 +1,5 @@
-import { type Response } from 'express';
+import { type Request, type Response } from 'express';
+import { Server as SocketServer } from 'socket.io';
 
 export enum HttpStatus {
   OK = 200,
@@ -197,5 +198,9 @@ export abstract class BaseController {
     const sanitized = { ...user };
     delete sanitized.password;
     return sanitized;
+  }
+
+  protected getIO(req: Request): SocketServer {
+    return req.app.get('io');
   }
 }

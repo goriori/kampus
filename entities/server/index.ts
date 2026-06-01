@@ -4,7 +4,10 @@ import express, {
   type Response,
   type NextFunction,
 } from 'express';
+import jwt from 'jsonwebtoken';
 import cors from 'cors';
+import http from 'http';
+import { Server as SocketServer } from 'socket.io';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
@@ -12,21 +15,37 @@ import { config } from '../../configs';
 import { Database } from '../../configs/database';
 import { initializeModels } from '../../models';
 import { AppRoutes } from './routes';
+import type { IJwtPayload } from '../../types';
 
 export class Server {
   private app: Application;
   private port: number;
   private database: Database;
+  private httpServer: http.Server;
+  public io: SocketServer;
 
   constructor() {
     this.app = express();
     this.port = Number(config.port);
     this.database = Database.getInstance();
 
+    this.httpServer = http.createServer(this.app);
+
+    this.io = new SocketServer(this.httpServer, {
+      cors: {
+        origin: config.cors.origin,
+        credentials: true,
+      },
+      maxHttpBufferSize: 1e6, // 1 MB
+    });
+
+    this.app.set('io', this.getIO());
+
     this.initializeMiddlewares();
     this.initializeModels();
     this.initializeRoutes();
     this.initializeErrorHandling();
+    this.initializeWebSocket();
   }
 
   private initializeMiddlewares(): void {
@@ -110,6 +129,49 @@ export class Server {
     }
   }
 
+  private initializeWebSocket(): void {
+    this.io.use((socket, next) => {
+      const token = socket.handshake.auth.token;
+      if (!token) {
+        return next(new Error('Authentication required'));
+      }
+
+      try {
+        const decoded = jwt.verify(token, config.jwt.secret) as IJwtPayload;
+        socket.data.userId = decoded.userId;
+        socket.data.userRole = decoded.role;
+        next();
+      } catch (error) {
+        if (error instanceof jwt.TokenExpiredError) {
+          return next(new Error('Token expired'));
+        }
+        if (error instanceof jwt.JsonWebTokenError) {
+          return next(new Error('Invalid token'));
+        }
+        return next(new Error('Authentication error'));
+      }
+    });
+
+    this.io.on('connection', (socket) => {
+      const userId = socket.data.userId;
+      const userRole = socket.data.userRole;
+
+      console.log(`🔌 User ${userId} connected (role: ${userRole})`);
+
+      if (userId) {
+        socket.join(`user:${userId}`);
+      }
+
+      if (userRole === 'admin') {
+        socket.join('admin-all');
+      }
+
+      socket.on('disconnect', () => {
+        console.log(`🔌 User ${userId} disconnected`);
+      });
+    });
+  }
+
   public async shutdown(): Promise<void> {
     await this.database.disconnect();
     process.exit(0);
@@ -117,5 +179,9 @@ export class Server {
 
   public getApp(): Application {
     return this.app;
+  }
+
+  public getIO(): SocketServer {
+    return this.io;
   }
 }

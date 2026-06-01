@@ -220,7 +220,13 @@ export class TaskController extends BaseController {
           );
           return;
         }
+
         task.status = status;
+        const io = this.getIO(req);
+        if (task.userId) {
+          io.to(`user:${task.userId}`).emit('taskUpdated', task);
+        }
+        io.to('admin-all').emit('taskUpdated', task);
       }
 
       if (dueDate !== undefined) {
