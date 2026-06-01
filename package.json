@@ -1,8 +1,15 @@
 {
   "name": "kampus",
   "module": "index.ts",
+  "version": "0.3.0",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run --watch index.ts",
+    "build": "bun build index.ts --outdir ./dist --target node --format esm",
+    "start:bun": "bun run dist/index.js",
+    "start:node": "node  dist/index.js"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/swagger-jsdoc": "^6.0.4",
