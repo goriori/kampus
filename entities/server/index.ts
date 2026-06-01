@@ -7,6 +7,7 @@ import express, {
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import { config } from '../../configs';
 import { Database } from '../../configs/database';
 import { initializeModels } from '../../models';
@@ -30,6 +31,16 @@ export class Server {
 
   private initializeMiddlewares(): void {
     this.app.use(helmet());
+
+    this.app.use(
+      rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 100,
+        message: 'Слишком много запросов с вашего IP, попробуйте позже.',
+        standardHeaders: true,
+        legacyHeaders: false,
+      }),
+    );
 
     this.app.use(cors(config.cors));
 
