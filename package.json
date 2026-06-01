@@ -1,19 +1,24 @@
 {
   "name": "kampus",
   "module": "index.ts",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "private": true,
   "scripts": {
     "dev": "bun run --watch index.ts",
     "build": "bun build index.ts --outdir ./dist --target node --format esm",
     "start:bun": "bun run dist/index.js",
-    "start:node": "node  dist/index.js"
+    "start:node": "node  dist/index.js",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
   },
   "devDependencies": {
+    "@jest/globals": "^30.4.1",
     "@types/bun": "latest",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.8"
+    "@types/swagger-ui-express": "^4.1.8",
+    "supertest": "^7.2.2"
   },
   "peerDependencies": {
     "typescript": "^5"
