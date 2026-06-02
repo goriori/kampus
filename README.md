@@ -64,7 +64,7 @@ bun run start:node     # через Node.js
 
 Перейдите в браузере по адресу:
 
-http://localhost:5000/
+http://localhost:5000/api/docs
 
 Там находится интерактивная документация (Swagger UI), построенная на основе OpenAPI 3.0.0.
 
